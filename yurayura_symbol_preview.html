@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ゆらゆら ロゴプレビュー</title>
+<style>
+*{box-sizing:border-box} html,body{margin:0;height:100%;background:#f7f7f5}
+body{display:grid;place-items:center;overflow:hidden;font-family:"Noto Serif JP","Yu Mincho",serif}
+.hero{position:relative;width:100%;height:100svh;display:grid;place-items:center;overflow:hidden;background:
+radial-gradient(circle at 50% 45%,#fff 0 28%,#f6f5f2 72%,#eee 100%)}
+.h{position:absolute;width:68vw;aspect-ratio:1;border-radius:50%;filter:blur(70px);opacity:.42;mix-blend-mode:screen}
+.h1{left:-16%;top:-25%;background:conic-gradient(from 20deg,transparent,#98e2ff99,#d3a8ff77,#ffd99a88,transparent);animation:float1 24s ease-in-out infinite}
+.h2{right:-20%;top:5%;background:conic-gradient(from 120deg,transparent,#ffc3d488,#a6e5ff88,#e0b8ff77,transparent);animation:float2 28s ease-in-out infinite}
+.h3{left:20%;bottom:-35%;background:radial-gradient(circle,#fff,#8ed9ff66,#ffbfd555,transparent 70%);animation:float3 32s ease-in-out infinite}
+.logo{position:relative;z-index:2;text-align:center}
+svg{width:min(38vw,320px);overflow:visible}
+.ring{fill:none;stroke:#222;stroke-linecap:round;transform-box:fill-box;transform-origin:center}
+.outer{animation:rot1 14s linear infinite}
+.inner{animation:rot2 11s linear infinite reverse}
+.title{font-size:clamp(42px,7vw,92px);font-weight:300;letter-spacing:.18em;margin-top:22px;color:#2b2b2bcc}
+.sub{font-size:clamp(11px,1.5vw,18px);letter-spacing:.32em;color:#4449;margin-top:12px}
+@keyframes rot1{to{transform:rotate(360deg)}}
+@keyframes rot2{to{transform:rotate(360deg)}}
+@keyframes float1{50%{transform:translate(6vw,3vh) rotate(10deg)}}
+@keyframes float2{50%{transform:translate(-5vw,4vh) rotate(-8deg)}}
+@keyframes float3{50%{transform:translate(4vw,-4vh) scale(1.05)}}
+</style>
+</head>
+<body>
+<section class="hero">
+<div class="h h1"></div><div class="h h2"></div><div class="h h3"></div>
+<div class="logo">
+<svg viewBox="0 0 300 300" aria-label="ゆらゆら シンボル">
+<defs>
+ <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#222" stop-opacity=".2"/><stop offset=".45" stop-color="#222" stop-opacity=".9"/><stop offset="1" stop-color="#222" stop-opacity=".35"/></linearGradient>
+ <linearGradient id="g2" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#222" stop-opacity=".85"/><stop offset=".55" stop-color="#222" stop-opacity=".25"/><stop offset="1" stop-color="#222" stop-opacity=".75"/></linearGradient>
+</defs>
+<ellipse class="ring outer" cx="150" cy="150" rx="102" ry="96" stroke="url(#g1)" stroke-width="5"/>
+<ellipse class="ring inner" cx="154" cy="147" rx="78" ry="84" stroke="url(#g2)" stroke-width="3"/>
+<circle cx="150" cy="150" r="11" fill="#817c7333"/>
+</svg>
+<div class="title">ゆらゆら</div>
+<div class="sub">こころ揺らすアート展</div>
+</div>
+</section>
+</body>
+</html>
