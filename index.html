@@ -1,257 +1,447 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>ゆらゆら — シンボルアニメーション</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f7f6f2">
+<title>ゆらゆら — WebGLシンボルアニメーション</title>
 <style>
-  :root{
-    --bg:#f7f6f2;
-    --ink:#232323;
+  :root {
+    --paper: #f7f6f2;
+    --ink: #292824;
   }
-  *{box-sizing:border-box}
-  html,body{margin:0;min-height:100%;background:var(--bg)}
-  body{
-    min-height:100svh;
-    display:grid;
-    place-items:center;
-    overflow:hidden;
+
+  * { box-sizing: border-box; }
+
+  html,
+  body {
+    min-height: 100%;
+    margin: 0;
+    background: var(--paper);
   }
-  .stage{
-    position:relative;
-    width:min(92vw,900px);
-    aspect-ratio:1;
-    display:grid;
-    place-items:center;
+
+  body {
+    min-height: 100svh;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
   }
-  canvas{
-    width:100%;
-    height:100%;
-    display:block;
+
+  .stage {
+    position: relative;
+    width: min(92vw, 900px);
+    aspect-ratio: 1;
   }
-  @media (prefers-reduced-motion: reduce){
-    canvas{filter:none}
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+  }
+
+  .motion-toggle {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    border: 1px solid rgba(41, 40, 36, .18);
+    border-radius: 999px;
+    padding: .45rem .75rem;
+    background: rgba(247, 246, 242, .66);
+    color: rgba(41, 40, 36, .66);
+    font: 500 11px/1 system-ui, sans-serif;
+    letter-spacing: .08em;
+    opacity: .28;
+    transition: opacity .2s ease, background .2s ease;
+  }
+
+  .motion-toggle:hover,
+  .motion-toggle:focus-visible {
+    opacity: 1;
+    background: rgba(255, 255, 255, .9);
+    outline: none;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 </style>
 </head>
 <body>
 <main class="stage" aria-label="ゆらゆら アニメーションシンボル">
-  <canvas id="yurayura"></canvas>
-  <noscript>このシンボルアニメーションを表示するにはJavaScriptを有効にしてください。</noscript>
+  <canvas id="yurayura" role="img" aria-label="ゆらゆら。2本の歪んだ半透明リボンがゆっくり動くシンボル"></canvas>
+  <p id="motion-status" class="sr-only" aria-live="polite">アニメーション再生中</p>
 </main>
+<button id="motion-toggle" class="motion-toggle" type="button" aria-pressed="false">一時停止</button>
 
 <script>
 (() => {
+  'use strict';
+
   const canvas = document.getElementById('yurayura');
-  const ctx = canvas.getContext('2d');
-  const DPR = Math.min(devicePixelRatio || 1, 2);
-
-  function resize(){
-    const r = canvas.getBoundingClientRect();
-    canvas.width = Math.round(r.width * DPR);
-    canvas.height = Math.round(r.height * DPR);
-    ctx.setTransform(DPR,0,0,DPR,0,0);
-  }
-  addEventListener('resize', resize);
-  resize();
-
+  const toggle = document.getElementById('motion-toggle');
+  const status = document.getElementById('motion-status');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const motionScale = reducedMotion.matches ? 0.28 : 1;
   const TAU = Math.PI * 2;
 
-  // Smoothstep: 帯の太さが突然切り替わらないようにする
-  const smooth = x => x*x*(3-2*x);
+  let playing = true;
+  let time = 0;
+  let lastFrame = performance.now();
 
-  // 円周上を移動する「太い部分」を作る周期関数
-  function lobe(a, center, width){
-    let d = Math.atan2(Math.sin(a-center), Math.cos(a-center));
-    const x = Math.max(0, 1 - Math.abs(d)/width);
-    return smooth(x);
+  function setMotionState(nextPlaying) {
+    playing = nextPlaying;
+    toggle.textContent = playing ? '一時停止' : '再生';
+    toggle.setAttribute('aria-pressed', String(!playing));
+    status.textContent = playing ? 'アニメーション再生中' : 'アニメーション一時停止中';
+    if (playing) lastFrame = performance.now();
   }
 
-  function ribbonPath(cx, cy, baseR, phase, t, cfg){
-    const N = 360;
-    const outer = [];
-    const inner = [];
+  toggle.addEventListener('click', () => setMotionState(!playing));
+  canvas.addEventListener('click', () => setMotionState(!playing));
 
-    for(let i=0;i<=N;i++){
-      const a = i/N * TAU;
+  const vertexSource = `
+    attribute vec2 a_position;
+    void main() {
+      gl_Position = vec4(a_position, 0.0, 1.0);
+    }
+  `;
 
-      // 「完全な円」にしない。複数周期を重ねてごく弱く歪ませる
-      const wobble =
-        cfg.w1 * Math.sin(a*2 + phase + t*cfg.speed1) +
-        cfg.w2 * Math.sin(a*3 - phase*0.7 - t*cfg.speed2) +
-        cfg.w3 * Math.sin(a*5 + 1.2 + t*cfg.speed3);
+  const fragmentSource = `
+    precision highp float;
 
-      // 偏心。外円・内円で位相と速度を変える
-      const ox =
-        cfg.offsetX +
-        Math.sin(t*cfg.offsetSpeed + phase) * cfg.offsetAmp;
-      const oy =
-        cfg.offsetY +
-        Math.cos(t*cfg.offsetSpeed*0.83 + phase) * cfg.offsetAmp*0.8;
+    uniform vec2 u_resolution;
+    uniform float u_time;
 
-      // 円周上を移動する「厚い帯」
-      const thick =
-        cfg.minWidth +
-        cfg.maxAdd1 * lobe(a, cfg.lobe1 + t*cfg.lobeSpeed1, cfg.lobeWidth1) +
-        cfg.maxAdd2 * lobe(a, cfg.lobe2 - t*cfg.lobeSpeed2, cfg.lobeWidth2);
-
-      const r = baseR + wobble;
-      const nx = Math.cos(a), ny = Math.sin(a);
-
-      // 帯の外周・内周
-      const ro = r + thick*0.5;
-      const ri = r - thick*0.5;
-
-      outer.push([cx+ox+ro*nx, cy+oy+ro*ny]);
-      inner.push([cx+ox+ri*nx, cy+oy+ri*ny]);
+    float angleDistance(float a, float b) {
+      return atan(sin(a - b), cos(a - b));
     }
 
-    const p = new Path2D();
-    p.moveTo(...outer[0]);
-    for(let i=1;i<outer.length;i++) p.lineTo(...outer[i]);
-    for(let i=inner.length-1;i>=0;i--) p.lineTo(...inner[i]);
-    p.closePath();
-
-    // 中心線（細い輪郭）
-    const c = new Path2D();
-    for(let i=0;i<=N;i++){
-      const a = i/N*TAU;
-      const wobble =
-        cfg.w1 * Math.sin(a*2 + phase + t*cfg.speed1) +
-        cfg.w2 * Math.sin(a*3 - phase*0.7 - t*cfg.speed2) +
-        cfg.w3 * Math.sin(a*5 + 1.2 + t*cfg.speed3);
-      const ox =
-        cfg.offsetX +
-        Math.sin(t*cfg.offsetSpeed + phase) * cfg.offsetAmp;
-      const oy =
-        cfg.offsetY +
-        Math.cos(t*cfg.offsetSpeed*0.83 + phase) * cfg.offsetAmp*0.8;
-      const r = baseR+wobble;
-      const x = cx+ox+r*Math.cos(a);
-      const y = cy+oy+r*Math.sin(a);
-      if(i===0)c.moveTo(x,y); else c.lineTo(x,y);
+    float lobe(float angle, float center, float width) {
+      float distanceToCenter = abs(angleDistance(angle, center));
+      float x = 1.0 - smoothstep(0.0, width, distanceToCenter);
+      return x * x * (3.0 - 2.0 * x);
     }
-    return {band:p, center:c};
+
+    vec2 rotatePoint(vec2 point, float angle) {
+      float s = sin(angle);
+      float c = cos(angle);
+      return vec2(c * point.x - s * point.y, s * point.x + c * point.y);
+    }
+
+    vec4 ribbon(
+      vec2 point,
+      float baseRadius,
+      float phase,
+      vec2 scale,
+      vec2 offset,
+      float rotation,
+      float speed,
+      float direction,
+      float gapCenter,
+      float gapWidth
+    ) {
+      vec2 q = rotatePoint(point - offset, rotation);
+      float angle = atan(q.y, q.x);
+      float radius = length(vec2(q.x / scale.x, q.y / scale.y));
+
+      float wobble =
+        0.010 * sin(angle * 2.0 + phase + u_time * speed * 0.34) +
+        0.006 * sin(angle * 3.0 - phase * 0.70 - u_time * speed * 0.23) +
+        0.003 * sin(angle * 5.0 + 1.20 + u_time * speed * 0.17);
+
+      float targetRadius = baseRadius + wobble;
+      float distanceToCenter = abs(radius - targetRadius);
+
+      float movingCenter = phase + direction * u_time * speed;
+      float secondCenter = phase + 3.45 - direction * u_time * speed * 0.62;
+      float thickness =
+        0.006 +
+        0.062 * lobe(angle, movingCenter, 1.08) +
+        0.024 * lobe(angle, secondCenter, 0.68);
+
+      float band = 1.0 - smoothstep(thickness * 0.5, thickness * 0.5 + 0.010, distanceToCenter);
+      float edge = 1.0 - smoothstep(0.0, 0.0045, abs(distanceToCenter - thickness * 0.5));
+
+      // Soft gaps keep each loop from reading as a perfect closed circle.
+      float gap = smoothstep(gapWidth * 0.38, gapWidth, abs(angleDistance(angle, gapCenter)));
+      float trailingGap = smoothstep(gapWidth * 0.22, gapWidth * 0.72, abs(angleDistance(angle, gapCenter + 2.72)));
+      float incompleteMask = min(gap, trailingGap);
+
+      float surfaceLight = 0.5 + 0.5 * sin(angle * 2.0 + u_time * speed * 0.40 + phase);
+      vec3 warm = vec3(0.16, 0.15, 0.14);
+      vec3 cool = vec3(0.34, 0.36, 0.38);
+      vec3 surface = mix(warm, cool, surfaceLight * 0.45);
+      surface += vec3(0.055, 0.048, 0.038) * lobe(angle, movingCenter - 0.18, 0.80);
+
+      float alpha = min(1.0, (band * 0.54 + edge * 0.88) * incompleteMask);
+      return vec4(surface * alpha, alpha);
+    }
+
+    void main() {
+      float shortestSide = min(u_resolution.x, u_resolution.y);
+      vec2 point = (gl_FragCoord.xy - 0.5 * u_resolution) / shortestSide;
+
+      float distanceFromCenter = length(point);
+      float paper = smoothstep(0.02, 0.68, distanceFromCenter);
+      vec3 background = mix(vec3(1.0, 0.998, 0.992), vec3(0.925, 0.923, 0.908), paper);
+
+      float glow = exp(-distanceFromCenter * distanceFromCenter * 10.0);
+      float hueWave = 0.5 + 0.5 * sin(atan(point.y, point.x) * 3.0 + u_time * 0.06);
+      background += vec3(0.018, 0.022, 0.026) * glow;
+      background += mix(vec3(0.018, 0.032, 0.040), vec3(0.038, 0.022, 0.040), hueWave) * glow * 0.20;
+
+      vec2 outerOffset = vec2(
+        0.012 * sin(u_time * 0.34),
+        -0.010 + 0.010 * cos(u_time * 0.28)
+      );
+      vec2 innerOffset = vec2(
+        0.018 + 0.010 * sin(u_time * 0.27 + 1.2),
+        0.012 + 0.008 * cos(u_time * 0.22)
+      );
+
+      vec4 outer = ribbon(
+        point,
+        0.315,
+        0.22,
+        vec2(1.00, 0.95),
+        outerOffset,
+        0.045 * sin(u_time * 0.16),
+        0.52,
+        1.0,
+        2.62 + u_time * 0.08,
+        0.23
+      );
+      vec4 inner = ribbon(
+        point,
+        0.232,
+        1.16,
+        vec2(0.94, 1.03),
+        innerOffset,
+        -0.055 * cos(u_time * 0.13),
+        0.68,
+        -1.0,
+        5.52 - u_time * 0.11,
+        0.19
+      );
+
+      vec3 color = background * (1.0 - outer.a) + outer.rgb;
+      color = color * (1.0 - inner.a) + inner.rgb;
+
+      float dotRadius = 0.038 * (1.0 + 0.035 * sin(u_time * 0.35));
+      float centerDot = 1.0 - smoothstep(dotRadius, dotRadius + 0.008, distanceFromCenter);
+      color = mix(color, vec3(0.48, 0.46, 0.42), centerDot * 0.13);
+
+      gl_FragColor = vec4(color, 1.0);
+    }
+  `;
+
+  function compileShader(gl, type, source) {
+    const shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      const message = gl.getShaderInfoLog(shader) || 'Shader compilation failed';
+      gl.deleteShader(shader);
+      throw new Error(message);
+    }
+    return shader;
   }
 
-  const outerCfg = {
-    w1:5.2,w2:2.6,w3:1.3,
-    speed1:.12,speed2:.09,speed3:.07,
-    offsetX:0,offsetY:-1,offsetAmp:3.2,offsetSpeed:.16,
-    minWidth:.8,
-    maxAdd1:22,maxAdd2:8,
-    lobe1:.15,lobe2:3.75,
-    lobeSpeed1:.18,lobeSpeed2:.11,
-    lobeWidth1:1.15,lobeWidth2:.75
-  };
+  function createProgram(gl) {
+    const vertexShader = compileShader(gl, gl.VERTEX_SHADER, vertexSource);
+    const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
+    const program = gl.createProgram();
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    gl.deleteShader(vertexShader);
+    gl.deleteShader(fragmentShader);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      throw new Error(gl.getProgramInfoLog(program) || 'Program linking failed');
+    }
+    return program;
+  }
 
-  const innerCfg = {
-    w1:3.8,w2:2.0,w3:1.0,
-    speed1:-.10,speed2:.07,speed3:-.06,
-    offsetX:2.2,offsetY:1.8,offsetAmp:2.5,offsetSpeed:.13,
-    minWidth:.7,
-    maxAdd1:16,maxAdd2:6,
-    lobe1:1.05,lobe2:4.55,
-    lobeSpeed1:.145,lobeSpeed2:.095,
-    lobeWidth1:.95,lobeWidth2:.65
-  };
+  function startWebGL(gl) {
+    const program = createProgram(gl);
+    const positionLocation = gl.getAttribLocation(program, 'a_position');
+    const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
+    const timeLocation = gl.getUniformLocation(program, 'u_time');
+    const buffer = gl.createBuffer();
 
-  function paintRibbon(pathObj, cx, cy, r, t, flip=false){
-    // 面：半透明の紙・膜のような質感
-    const g = ctx.createRadialGradient(
-      cx + Math.cos(t*.10+(flip?1.4:0))*r*.22,
-      cy + Math.sin(t*.08+(flip?.5:0))*r*.18,
-      r*.08,
-      cx,cy,r*1.2
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array([-1, -1, 3, -1, -1, 3]),
+      gl.STATIC_DRAW
     );
-    g.addColorStop(0, 'rgba(95,90,82,.08)');
-    g.addColorStop(.48,'rgba(85,82,76,.16)');
-    g.addColorStop(.78,'rgba(35,35,35,.34)');
-    g.addColorStop(1,'rgba(115,108,98,.09)');
+    gl.useProgram(program);
+    gl.enableVertexAttribArray(positionLocation);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+    gl.clearColor(0.968, 0.965, 0.949, 1);
 
-    ctx.fillStyle = g;
-    ctx.fill(pathObj.band);
-
-    // 細い輪郭線
-    ctx.lineWidth = 1.15;
-    ctx.strokeStyle = 'rgba(28,28,28,.82)';
-    ctx.stroke(pathObj.center);
-
-    // ごく弱いぼかしの影
-    ctx.save();
-    ctx.globalAlpha = .13;
-    ctx.filter = 'blur(4px)';
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = '#6e675d';
-    ctx.stroke(pathObj.center);
-    ctx.restore();
-  }
-
-  let last=performance.now();
-  let t=0;
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  function frame(now){
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
-    ctx.clearRect(0,0,w,h);
-
-    // 背景
-    const bg = ctx.createRadialGradient(w*.50,h*.47,10,w*.50,h*.50,w*.62);
-    bg.addColorStop(0,'#fff');
-    bg.addColorStop(.65,'#faf9f6');
-    bg.addColorStop(1,'#f0efeb');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0,0,w,h);
-
-    // 淡いホログラム
-    ctx.save();
-    ctx.globalCompositeOperation='screen';
-    const holo = ctx.createConicGradient(t*.025, w*.5, h*.5);
-    holo.addColorStop(0,'rgba(120,220,255,.14)');
-    holo.addColorStop(.2,'rgba(230,170,255,.10)');
-    holo.addColorStop(.42,'rgba(255,218,150,.12)');
-    holo.addColorStop(.62,'rgba(150,240,220,.10)');
-    holo.addColorStop(.82,'rgba(255,180,210,.10)');
-    holo.addColorStop(1,'rgba(120,220,255,.14)');
-    ctx.filter='blur(50px)';
-    ctx.fillStyle=holo;
-    ctx.beginPath();
-    ctx.arc(w*.5,h*.5,Math.min(w,h)*.54,0,TAU);
-    ctx.fill();
-    ctx.restore();
-
-    const s = Math.min(w,h);
-    const cx = w/2;
-    const cy = h/2;
-    const outerR = s*.315;
-    const innerR = s*.235;
-
-    const outer = ribbonPath(cx,cy,outerR,0.15,t,outerCfg);
-    const inner = ribbonPath(cx,cy,innerR,1.2,t,innerCfg);
-
-    paintRibbon(outer,cx,cy,outerR,t,false);
-    paintRibbon(inner,cx,cy,innerR,t,true);
-
-    // 中央の薄い円
-    const dotR = s*.038*(1 + Math.sin(t*.32)*.035);
-    const dg = ctx.createRadialGradient(cx-dotR*.2,cy-dotR*.25,1,cx,cy,dotR);
-    dg.addColorStop(0,'rgba(165,160,150,.16)');
-    dg.addColorStop(1,'rgba(125,120,112,.08)');
-    ctx.fillStyle=dg;
-    ctx.beginPath();
-    ctx.arc(cx,cy,dotR,0,TAU);
-    ctx.fill();
-
-    if(!reduce){
-      const dt=Math.min((now-last)/1000,.05);
-      t += dt;
-      last=now;
-      requestAnimationFrame(frame);
+    function resize() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const width = Math.max(1, Math.floor(rect.width * dpr));
+      const height = Math.max(1, Math.floor(rect.height * dpr));
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+        gl.viewport(0, 0, width, height);
+      }
+      gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
     }
+
+    function frame(now) {
+      const delta = Math.min((now - lastFrame) / 1000, 0.05);
+      lastFrame = now;
+      if (playing) time += delta * motionScale;
+      resize();
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.uniform1f(timeLocation, time);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      window.requestAnimationFrame(frame);
+    }
+
+    window.addEventListener('resize', resize, {passive: true});
+    resize();
+    window.requestAnimationFrame(frame);
   }
 
-  requestAnimationFrame(frame);
+  function startCanvasFallback() {
+    const replacement = canvas.cloneNode(true);
+    canvas.replaceWith(replacement);
+    replacement.addEventListener('click', () => setMotionState(!playing));
+    const ctx = replacement.getContext('2d');
+    if (!ctx) {
+      status.textContent = 'このブラウザではアニメーションを表示できません';
+      return;
+    }
+
+    const N = 360;
+    let fallbackDpr = 1;
+
+    function resizeFallback() {
+      const rect = replacement.getBoundingClientRect();
+      fallbackDpr = Math.min(window.devicePixelRatio || 1, 2);
+      replacement.width = Math.max(1, Math.floor(rect.width * fallbackDpr));
+      replacement.height = Math.max(1, Math.floor(rect.height * fallbackDpr));
+      ctx.setTransform(fallbackDpr, 0, 0, fallbackDpr, 0, 0);
+    }
+
+    function circularDistance(a, b) {
+      return Math.atan2(Math.sin(a - b), Math.cos(a - b));
+    }
+
+    function drawFallbackRibbon(cx, cy, radius, phase, now, config) {
+      let previous = null;
+      for (let i = 0; i <= N; i += 1) {
+        const angle = (i / N) * TAU;
+        const wobble =
+          config.w1 * Math.sin(angle * 2 + phase + now * config.s1) +
+          config.w2 * Math.sin(angle * 3 - phase * 0.7 - now * config.s2);
+        const center = phase + config.direction * now * config.lobeSpeed;
+        const distance = Math.abs(circularDistance(angle, center));
+        const lobeValue = Math.max(0, 1 - distance / config.lobeWidth);
+        const thickness = config.baseWidth + config.maxWidth * lobeValue * lobeValue;
+        const gap = Math.abs(circularDistance(angle, config.gap));
+        const isGap = gap < config.gapWidth || Math.abs(gap - Math.PI) < config.gapWidth * 0.7;
+        const current = {
+          x: cx + config.offsetX + (radius + wobble) * Math.cos(angle),
+          y: cy + config.offsetY + (radius + wobble) * Math.sin(angle),
+          thickness,
+          isGap
+        };
+        if (previous && !previous.isGap && !current.isGap) {
+          ctx.beginPath();
+          ctx.moveTo(previous.x, previous.y);
+          ctx.lineTo(current.x, current.y);
+          ctx.lineWidth = current.thickness;
+          ctx.strokeStyle = 'rgba(48, 46, 42, .27)';
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(previous.x, previous.y);
+          ctx.lineTo(current.x, current.y);
+          ctx.lineWidth = 1;
+          ctx.strokeStyle = 'rgba(35, 34, 31, .82)';
+          ctx.stroke();
+        }
+        previous = current;
+      }
+    }
+
+    function fallbackFrame(nowMs) {
+      const now = nowMs / 1000;
+      const delta = Math.min((nowMs - lastFrame) / 1000, 0.05);
+      lastFrame = nowMs;
+      if (playing) time += delta * motionScale;
+      resizeFallback();
+      const width = replacement.clientWidth;
+      const height = replacement.clientHeight;
+      ctx.clearRect(0, 0, width, height);
+      const background = ctx.createRadialGradient(width * .5, height * .45, 10, width * .5, height * .5, width * .7);
+      background.addColorStop(0, '#fff');
+      background.addColorStop(.68, '#f8f7f4');
+      background.addColorStop(1, '#eeece7');
+      ctx.fillStyle = background;
+      ctx.fillRect(0, 0, width, height);
+      const size = Math.min(width, height);
+      ctx.save();
+      ctx.translate(width * .5, height * .5);
+      ctx.shadowColor = 'rgba(57, 53, 46, .16)';
+      ctx.shadowBlur = 5;
+      drawFallbackRibbon(0, 0, size * .315, .22, time, {
+        w1: size * .010, w2: size * .006, s1: .18, s2: .12,
+        direction: 1, lobeSpeed: .52, lobeWidth: 1.08,
+        baseWidth: size * .006, maxWidth: size * .062,
+        offsetX: size * .012 * Math.sin(time * .34), offsetY: -size * .01,
+        gap: 2.62 + time * .08, gapWidth: .23
+      });
+      drawFallbackRibbon(0, 0, size * .232, 1.16, time, {
+        w1: size * .008, w2: size * .004, s1: -.16, s2: .10,
+        direction: -1, lobeSpeed: .68, lobeWidth: .92,
+        baseWidth: size * .005, maxWidth: size * .052,
+        offsetX: size * .018, offsetY: size * .012,
+        gap: 5.52 - time * .11, gapWidth: .19
+      });
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(125, 120, 112, .10)';
+      ctx.beginPath();
+      ctx.arc(0, 0, size * .038, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+      window.requestAnimationFrame(fallbackFrame);
+    }
+
+    window.addEventListener('resize', resizeFallback, {passive: true});
+    resizeFallback();
+    window.requestAnimationFrame(fallbackFrame);
+  }
+
+  try {
+    const gl = canvas.getContext('webgl', {
+      alpha: false,
+      antialias: false,
+      depth: false,
+      stencil: false,
+      powerPreference: 'high-performance'
+    });
+    if (!gl) throw new Error('WebGL is not available');
+    startWebGL(gl);
+  } catch (error) {
+    console.warn('WebGL renderer unavailable; using Canvas fallback.', error);
+    startCanvasFallback();
+  }
 })();
 </script>
 </body>
