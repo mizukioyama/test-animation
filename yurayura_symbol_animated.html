@@ -344,7 +344,26 @@
     }
 
     function drawFallbackRibbon(cx, cy, radius, phase, now, config) {
-      let previous = null;
+      let segment = [];
+
+      function paintSegment(points) {
+        if (points.length < 2) return;
+        ctx.beginPath();
+        ctx.moveTo(points[0].outerX, points[0].outerY);
+        for (let i = 1; i < points.length; i += 1) {
+          ctx.lineTo(points[i].outerX, points[i].outerY);
+        }
+        for (let i = points.length - 1; i >= 0; i -= 1) {
+          ctx.lineTo(points[i].innerX, points[i].innerY);
+        }
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(48, 46, 42, .27)';
+        ctx.fill();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(35, 34, 31, .82)';
+        ctx.stroke();
+      }
+
       for (let i = 0; i <= N; i += 1) {
         const angle = (i / N) * TAU;
         const wobble =
@@ -356,28 +375,24 @@
         const thickness = config.baseWidth + config.maxWidth * lobeValue * lobeValue;
         const gap = Math.abs(circularDistance(angle, config.gap));
         const isGap = gap < config.gapWidth || Math.abs(gap - Math.PI) < config.gapWidth * 0.7;
-        const current = {
-          x: cx + config.offsetX + (radius + wobble) * Math.cos(angle),
-          y: cy + config.offsetY + (radius + wobble) * Math.sin(angle),
-          thickness,
-          isGap
-        };
-        if (previous && !previous.isGap && !current.isGap) {
-          ctx.beginPath();
-          ctx.moveTo(previous.x, previous.y);
-          ctx.lineTo(current.x, current.y);
-          ctx.lineWidth = current.thickness;
-          ctx.strokeStyle = 'rgba(48, 46, 42, .27)';
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(previous.x, previous.y);
-          ctx.lineTo(current.x, current.y);
-          ctx.lineWidth = 1;
-          ctx.strokeStyle = 'rgba(35, 34, 31, .82)';
-          ctx.stroke();
+        if (isGap) {
+          paintSegment(segment);
+          segment = [];
+          continue;
         }
-        previous = current;
+
+        const centerX = cx + config.offsetX + (radius + wobble) * Math.cos(angle);
+        const centerY = cy + config.offsetY + (radius + wobble) * Math.sin(angle);
+        const normalX = Math.cos(angle) * thickness * 0.5;
+        const normalY = Math.sin(angle) * thickness * 0.5;
+        segment.push({
+          outerX: centerX + normalX,
+          outerY: centerY + normalY,
+          innerX: centerX - normalX,
+          innerY: centerY - normalY
+        });
       }
+      paintSegment(segment);
     }
 
     function fallbackFrame(nowMs) {
