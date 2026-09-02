@@ -1,0 +1,705 @@
+/* ========================================
+  PC Base
+  1366px -
+======================================== */
+
+.header {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  box-sizing: border-box;
+  color: var(--bg-txt01);
+  background-color: var(--bg-txt02);
+  border-bottom: 1px solid var(--color-border);
+  z-index: 100;
+  padding: 4px 32px;
+  height: 72px;
+}
+
+@media (max-width: 375px) {
+  .header {
+    padding: 4px 16px;
+  }
+
+  .header__nav {
+    display: none;
+  }
+
+  .header__hamburger {
+    display: flex;
+  }
+}
+
+.header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--header-height);
+}
+
+/* ========================================
+  Logo
+======================================== */
+
+.header__logo,
+.footer__logo {
+  font-family: var(--fv-ttl-font);
+  color: inherit;
+  font-size: 32px;
+  font-weight: bold;
+  line-height: 2;
+  text-decoration: none;
+}
+
+.header__logo {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s ease;
+}
+
+.header.is-open .header__logo {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ========================================
+  Global Navigation
+======================================== */
+
+.header__nav {
+  display: block;
+}
+
+.nav__list {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reservation {
+  height: 48px;
+  background: var(--btn-color02);
+  box-shadow: 1px 2px 3px var(--bg-txt01);
+  border-radius: 100px;
+  font-family: var(--footer-btn-font);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header .reservation {
+  width: 160px;
+}
+
+.footer .reservation {
+  width: 200px;
+  height: 64px;
+}
+
+@media (max-width: 375px) {
+  .reservation {
+    width: 200px;
+    height: 64px;
+  }
+
+  .reservation .nav__link {
+    letter-spacing: 4px;
+  }
+}
+
+.nav__link {
+  color: var(--bg-txt01);
+  position: relative;
+  display: block;
+  color: inherit;
+  font-size: 16px;
+  line-height: 1.8;
+  text-decoration: none;
+}
+
+@media (max-width: 375px) {
+  .drawer__nav {
+    width: 100%;
+  }
+  .drawer__item {
+    width: 100%;
+    text-align: center;
+  }
+  .nav__item {
+    text-align: center;
+  }
+}
+
+.nav__link::after {
+  position: absolute;
+  right: 0;
+  bottom: 6px;
+  left: 0;
+  height: 1px;
+  content: "";
+  background-color: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform var(--duration) ease;
+}
+
+/* ========================================
+  Current Navigation
+======================================== */
+
+.nav__link.is-current,
+.drawer__link.is-current,
+.footer-nav__link.is-current {
+  color: var(--color-current);
+  cursor: default;
+  pointer-events: none;
+}
+
+.nav__link.is-current::after {
+  transform: scaleX(1);
+}
+
+/* .drawer__current {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  line-height: 1;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+}
+
+@media screen and (max-width: 375px) {
+  .drawer__current {
+    padding: 4px 6px;
+    font-size: 0.6875rem;
+  }
+} */
+
+/* ========================================
+  Hamburger
+======================================== */
+.header__hamburger {
+  display: none;
+}
+
+.header__hamburger {
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  color: inherit;
+  border: 0;
+  background-color: transparent;
+  cursor: pointer;
+}
+
+.hamburger__inner {
+  position: relative;
+  display: block;
+  width: 32px;
+  height: 25px;
+}
+
+.hamburger__line {
+  position: absolute;
+  left: 0;
+  display: block;
+  width: 100%;
+  height: 1px;
+  background-color: currentColor;
+  transition:
+    top var(--duration) ease,
+    transform var(--duration) ease,
+    opacity var(--duration) ease;
+}
+
+/* 上 */
+.hamburger__line--top {
+  top: 0;
+}
+
+/* 上ラインとの余白 12px */
+.hamburger__line--center {
+  top: 13px;
+}
+
+/* 中央ラインとの余白 10px */
+.hamburger__line--bottom {
+  top: 24px;
+}
+
+/* ========================================
+  open
+======================================== */
+
+.header__hamburger.is-open .hamburger__line--top {
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+  width: 30px;
+  height: 4px;
+}
+
+.header__hamburger.is-open .hamburger__line--center {
+  opacity: 0;
+}
+
+.header__hamburger.is-open .hamburger__line--bottom {
+  top: 50%;
+  transform: translateY(-50%) rotate(-45deg);
+  width: 30px;
+  height: 4px;
+}
+
+.btn-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+/* ========================================
+  Drawer
+======================================== */
+
+.drawer {
+  display: none;
+}
+
+.drawer__link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+@media (max-width: 375px) {
+  .drawer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    overflow-y: auto;
+    background-color: var(--bg-txt01);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-50%);
+    transition:
+      opacity var(--duration) ease,
+      visibility var(--duration) ease,
+      transform var(--duration) ease;
+  }
+
+  .drawer.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+    background: var(--bg-txt02);
+    width: 100%;
+    min-height: 100vh;
+    height: 100dvh;
+  }
+}
+
+/* ========================================
+ * Mobile Header Scroll Stop
+ *======================================== */
+
+@media screen and (max-width: 767px) {
+  .header.is-scroll-stop {
+    position: absolute;
+    top: var(--header-stop-position);
+  }
+}
+
+/* ========================================
+  Footer
+======================================== */
+
+.footer {
+  width: 100vw;
+  color: var(--bg-txt01);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-txt02);
+  padding: 64px 0;
+}
+
+.footer__inner {
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 375px) {
+  .footer {
+    padding: 64px 0;
+  }
+}
+
+.footer__main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  width: 100vw;
+}
+
+@media (max-width: 375px) {
+  .footer__main {
+    gap: 64px;
+  }
+}
+
+.footer__nav {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 240px;
+  width: 100vw;
+}
+
+@media (max-width: 375px) {
+  .footer__nav {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 32px;
+  }
+
+  .footer__logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.footer-nav__list {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-left: 1px solid var(--bg-txt01);
+  gap: 8px;
+}
+
+.footer-nav__list:last-of-type .f_nav__item.pc,
+.pc-block .footer-nav__list:last-child {
+  border: 0px;
+  padding: 0;
+}
+
+@media (min-width: 1336px) {
+  .footer-nav__list {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 375px) {
+  .footer-nav__list.sp {
+    border: 0px;
+    padding: 0;
+    gap: 16px;
+    display: flex;
+  }
+}
+
+.f_nav__item {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  column-gap: 16px;
+  align-items: start;
+  padding-left: 16px;
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.f-list {
+  display: flex;
+  justify-content: space-between;
+  /* width: 64px; */
+}
+
+@media (max-width: 375px) {
+  .f-list {
+    width: 64px;
+  }
+}
+
+.f__link {
+  color: var(--bg-txt01);
+}
+
+.footer__bottom {
+  margin-top: 40px;
+}
+
+.footer__copy {
+  font-size: 16px;
+  line-height: 1.8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* ========================================
+pc-block
+======================================== */
+.pc-block .footer-nav__list:last-child {
+  margin-top: 48px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-evenly;
+  gap: 16px;
+}
+
+.pc-block .f_nav__item {
+  grid-template-columns: 96px 1fr;
+}
+
+/* ========================================
+pc-block end
+======================================== */
+
+/* ========================================
+  Focus
+======================================== */
+
+.header__logo:focus-visible,
+.nav__link:focus-visible,
+.header__hamburger:focus-visible,
+.drawer__link:focus-visible,
+.footer__logo:focus-visible,
+.footer-nav__link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+
+/* ========================================
+  Hover
+======================================== */
+
+@media (hover: hover) and (pointer: fine) {
+  .nav__link:not(.is-current):hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+}
+
+/* ========================================
+  PC
+  1024px - 1365px
+======================================== */
+
+@media (max-width: 1365px) {
+  :root {
+    --content-width: 1152px;
+    --side-space: clamp(20px, 3vw, 32px);
+  }
+}
+
+/* ========================================
+  Tablet
+  768px - 1023px
+======================================== */
+
+@media screen and (min-width: 376px) and (max-width: 1335px) {
+  .header__nav {
+    display: none;
+  }
+
+  .header__hamburger {
+    display: flex;
+  }
+
+  .drawer {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    overflow-y: auto;
+    background-color: var(--bg-txt01);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-50%);
+    transition:
+      opacity var(--duration) ease,
+      visibility var(--duration) ease,
+      transform var(--duration) ease;
+  }
+
+  .drawer.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+    background: var(--bg-txt02);
+    width: 100%;
+    min-height: 100vh;
+    height: 100dvh;
+  }
+
+  .drawer__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+  }
+
+  .drawer__link {
+    color: inherit;
+    font-size: 16px;
+    line-height: 1.8;
+    text-decoration: none;
+  }
+
+  .footer__main {
+    flex-direction: column;
+  }
+}
+
+/* ========================================
+  376px - 1335px
+  Header: Hamburger / Footer: PC layout
+======================================== */
+
+@media screen and (min-width: 376px) and (max-width: 1335px) {
+  .footer,
+  .footer__inner,
+  .footer__main,
+  .footer__nav {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .footer {
+    padding: 64px 16px;
+  }
+
+  .footer__main {
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+  }
+
+  .footer__nav {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    justify-content: center;
+    gap: clamp(24px, 8vw, 240px);
+  }
+
+  .footer-nav__list {
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+
+  .pc {
+    display: block;
+  }
+
+  .sp {
+    display: none;
+  }
+}
+
+/* ========================================
+  Large Smartphone
+  481px - 767px
+======================================== */
+
+@media (max-width: 767px) {
+  :root {
+    --side-space: clamp(16px, 4vw, 24px);
+  }
+}
+
+/* ========================================
+  Smartphone
+  376px - 480px
+======================================== */
+
+@media (max-width: 480px) {
+  :root {
+    --side-space: 16px;
+  }
+
+  .header__hamburger {
+    width: 32px;
+    height: 28px;
+  }
+}
+
+/* ========================================
+  Body Lock
+======================================== */
+
+body.is-lock {
+  overflow: hidden;
+}
+
+/* ========================================
+  Reduced Motion
+======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .nav__link::after,
+  .hamburger__line,
+  .drawer {
+    transition: none;
+  }
+}
+
+.pc {
+  display: block;
+}
+.sp {
+  display: none;
+}
+
+@media (max-width: 375px) {
+  .pc {
+    display: none;
+  }
+  .sp {
+    display: block;
+  }
+  .f_nav__item.sp {
+    display: flex;
+  }
+}
