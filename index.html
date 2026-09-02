@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>喫茶いとま | こだわりの一杯と、心に余裕が生まれる時間を。</title>
+    <meta
+      name="description"
+      content="表参道に店を構える「喫茶いとま」は、街の喧噪の中で、落ち着いた時間を過ごせる喫茶店です。厳選した豆を丁寧に淹れたコーヒーと、木の温もりに包まれた静かな店内が、慌ただしい日常に“余白”をもたらします。"
+    />
+    <meta name="format-detection" content="telephone=no" />
+    <meta property="og:site_name" content="サイト名" />
+    <meta property="og:url" content="URL" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="喫茶いとま | こだわりの一杯と、心に余裕が生まれる時間を。" />
+    <meta property="og:description" content="表参道に店を構える「喫茶いとま」は、街の喧噪の中で、落ち着いた時間を過ごせる喫茶店です。厳選した豆を丁寧に淹れたコーヒーと、木の温もりに包まれた静かな店内が、慌ただしい日常に“余白”をもたらします。" />
+    <meta property="og:image" content="URL" />
+    <meta property="og:locale" content="ja_JP" />
+
+    <!-- google fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho&family=Shippori+Mincho+B1&family=UoqMunThenKhung&family=Zen+Kaku+Gothic+New&display=swap" rel="stylesheet">
+
+    <!-- css -->
+    <link rel="stylesheet" href="./reset.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="./nav.css">
+
+    <!-- js -->
+    <script defer>
+'use strict';
+
+
+/* ========================================
+ * Component
+ *======================================== */
+
+const loadComponent = async (selector, path) => {
+  const target = document.querySelector(selector);
+
+  if (!target) return;
+
+  try {
+    const response = await fetch(path);
+
+    if (!response.ok) {
+      throw new Error(
+        `${path} の読み込みに失敗しました。status: ${response.status}`
+      );
+    }
+
+    const html = await response.text();
+    target.innerHTML = html;
+
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+
+/* ========================================
+ * Drawer Menu
+ *======================================== */
+
+const initDrawer = () => {
+  const header = document.querySelector('.header');
+  const hamburger = document.querySelector('.js-hamburger');
+  const drawer = document.querySelector('.js-drawer');
+
+  if (!header || !hamburger || !drawer) return;
+
+
+  /* ------------------------------
+   * Drawer Close
+   *------------------------------ */
+
+  const closeDrawer = () => {
+    hamburger.classList.remove('is-open');
+    drawer.classList.remove('is-open');
+    header.classList.remove('is-open');
+
+    document.body.classList.remove('is-lock');
+
+    hamburger.setAttribute(
+      'aria-expanded',
+      'false'
+    );
+
+    hamburger.setAttribute(
+      'aria-label',
+      'メニューを開く'
+    );
+
+    drawer.setAttribute(
+      'aria-hidden',
+      'true'
+    );
+  };
+
+
+  /* ------------------------------
+   * Hamburger Click
+   *------------------------------ */
+
+  hamburger.addEventListener('click', () => {
+    const isOpen =
+      hamburger.classList.toggle('is-open');
+
+    drawer.classList.toggle(
+      'is-open',
+      isOpen
+    );
+
+    header.classList.toggle(
+      'is-open',
+      isOpen
+    );
+
+    document.body.classList.toggle(
+      'is-lock',
+      isOpen
+    );
+
+    hamburger.setAttribute(
+      'aria-expanded',
+      String(isOpen)
+    );
+
+    hamburger.setAttribute(
+      'aria-label',
+      isOpen
+        ? 'メニューを閉じる'
+        : 'メニューを開く'
+    );
+
+    drawer.setAttribute(
+      'aria-hidden',
+      String(!isOpen)
+    );
+  });
+
+
+  /* ------------------------------
+   * Drawer Link Click
+   *------------------------------ */
+
+  drawer
+    .querySelectorAll('.js-drawer-link, .nav__link')
+    .forEach((link) => {
+
+      link.addEventListener(
+        'click',
+        closeDrawer
+      );
+
+    });
+
+
+  /* ------------------------------
+   * Escape Key
+   *------------------------------ */
+
+  document.addEventListener(
+    'keydown',
+    (event) => {
+
+      if (event.key !== 'Escape') return;
+
+      const isOpen =
+        hamburger.getAttribute(
+          'aria-expanded'
+        ) === 'true';
+
+      if (!isOpen) return;
+
+      closeDrawer();
+
+      hamburger.focus();
+    }
+  );
+
+
+  /* ------------------------------
+   * PCに切り替わったらDrawerを閉じる
+   *------------------------------ */
+
+  const pcMedia =
+    window.matchMedia(
+      '(min-width: 1024px)'
+    );
+
+  pcMedia.addEventListener(
+    'change',
+    (event) => {
+
+      if (event.matches) {
+        closeDrawer();
+      }
+
+    }
+  );
+};
+
+
+/* ========================================
+ * Mobile Header Scroll
+ *
+ * スマホのみ
+ * ページ全体の60%地点で追尾終了
+ *======================================== */
+
+const initMobileHeaderScroll = () => {
+  const header =
+    document.querySelector('.header');
+
+  if (!header) return;
+
+
+  const mobileMedia =
+    window.matchMedia(
+      '(max-width: 767px)'
+    );
+
+
+  let ticking = false;
+
+
+  /* ------------------------------
+   * Header Position Update
+   *------------------------------ */
+
+  const updateHeader = () => {
+
+    /*
+     * 768px以上では通常のfixed
+     */
+    if (!mobileMedia.matches) {
+
+      header.classList.remove(
+        'is-scroll-stop'
+      );
+
+      header.style.removeProperty(
+        '--header-stop-position'
+      );
+
+      return;
+    }
+
+
+    /*
+     * Drawer展開中は
+     * Header追尾停止判定を行わない
+     */
+    if (header.classList.contains('is-open')) {
+      return;
+    }
+
+
+    const scrollTop =
+      window.scrollY ||
+      document.documentElement.scrollTop;
+
+
+    /*
+     * 実際にスクロール可能な距離
+     */
+    const maxScroll =
+      document.documentElement.scrollHeight -
+      window.innerHeight;
+
+
+    /*
+     * スクロールできないページ
+     */
+    if (maxScroll <= 0) {
+
+      header.classList.remove(
+        'is-scroll-stop'
+      );
+
+      header.style.removeProperty(
+        '--header-stop-position'
+      );
+
+      return;
+    }
+
+
+    /*
+     * ページ全体の60%
+     */
+    const stopPosition =
+      maxScroll * 0.6;
+
+
+    /*
+     * 60%以上
+     */
+    if (scrollTop >= stopPosition) {
+
+      header.style.setProperty(
+        '--header-stop-position',
+        `${stopPosition}px`
+      );
+
+      header.classList.add(
+        'is-scroll-stop'
+      );
+
+    } else {
+
+      /*
+       * 60%未満に戻ったら
+       * 再度fixed
+       */
+      header.classList.remove(
+        'is-scroll-stop'
+      );
+
+      header.style.removeProperty(
+        '--header-stop-position'
+      );
+
+    }
+  };
+
+
+  /* ------------------------------
+   * Scroll
+   *------------------------------ */
+
+  const handleScroll = () => {
+
+    if (ticking) return;
+
+    ticking = true;
+
+    window.requestAnimationFrame(() => {
+
+      updateHeader();
+
+      ticking = false;
+
+    });
+  };
+
+
+  /* ------------------------------
+   * Events
+   *------------------------------ */
+
+  window.addEventListener(
+    'scroll',
+    handleScroll,
+    {
+      passive: true
+    }
+  );
+
+
+  window.addEventListener(
+    'resize',
+    updateHeader
+  );
+
+
+  window.addEventListener(
+    'load',
+    updateHeader
+  );
+
+
+  mobileMedia.addEventListener(
+    'change',
+    updateHeader
+  );
+
+
+  /*
+   * 初期状態
+   */
+  updateHeader();
+};
+
+
+/* ========================================
+ * Footer Year
+ *======================================== */
+
+const initFooterYear = () => {
+  const year =
+    document.querySelector('.js-year');
+
+  if (!year) return;
+
+  year.textContent =
+    new Date().getFullYear();
+};
+
+
+/* ========================================
+ * Init
+ *======================================== */
+
+const initLayout = async () => {
+
+  /*
+   * Header / Footer読み込み
+   */
+  await Promise.all([
+
+    loadComponent(
+      '#header-component',
+      './header.html'
+    ),
+
+    loadComponent(
+      '#footer-component',
+      './footer.html'
+    )
+
+  ]);
+
+
+  /*
+   * Component読み込み完了後
+   */
+  initDrawer();
+  initFooterYear();
+  initMobileHeaderScroll();
+};
+
+
+/* ========================================
+ * DOM Ready
+ *======================================== */
+
+if (document.readyState === 'loading') {
+
+  document.addEventListener(
+    'DOMContentLoaded',
+    initLayout
+  );
+
+} else {
+
+  initLayout();
+
+}
+
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.10.3/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15/dist/gsap.min.js"></script>
+  </head>
+
+  <body>
+    <!-- headerを表示させるためのコード -->
+    <div id="header-component"></div>
+
+    <!-- fv -->
+    <div class="m_fv">
+      <h1 class="m_fv-copy">喫茶 いとま</h1>
+      <p class="m_fv-copy__sub">最近、ゆっくり過ごす時間はありましたか？</p>
+    </div>
+
+    <main class="l_main">
+      <!-- Concept -->
+      <section class="l_contents top_concept">
+        <h2 class="m_section-ttl">Concept</h2>
+
+        <p class="top_concept-txt">
+          ここでは、時間に追われるのではなく、時間とともに過ごすことができます。<br>
+          そんな“余白のある時間”を、どうぞゆっくりと味わってください。<br>
+        </p>
+
+        <div class="top_btn-wrapper">
+          <a href="concept.html" class="button">
+            <span>More</span><span class="button__arrow">&gt;</span>
+          </a>
+        </div>
+      </section>
+
+      <!-- Menu -->
+      <section class="p_top-menu m_section-bg__reverse l_contents" id="menu">
+        <h2 class="m_section-ttl m_section-ttl__reverse">Menu</h2>
+
+        <!-- 4枚の写真 -->
+        <div class="p_top-menu__gallery">
+          <div class="p_top-menu__item">
+            <img src="img/itomabrend.webp" alt="いとまブレンド">
+          </div>
+          <div class="p_top-menu__item">
+            <img src="img/sandwich.webp" alt="厚焼き玉子のサンドイッチ">
+          </div>
+          <div class="p_top-menu__item">
+            <img src="img/fruitcake.webp" alt="旬の果実のケーキ">
+          </div>
+          <div class="p_top-menu__item">
+            <img src="img/cafelatte.webp" alt="カフェラテ">
+          </div>
+        </div>
+
+        <!-- Menu More ボタン -->
+        <div class="top_btn-wrapper">
+          <a href="menu.html" class="button button--menu">
+            <span>More</span><span class="button__arrow">&gt;</span>
+          </a>
+        </div>
+      </section>
+
+      <!-- cta -->
+      <section class="top_cta">
+        <div class="m_cta-wrapper m_cta-contact top_cta-contact">
+          <a href="contact.html" class="m_cta-link">
+            <div class="m_cta-txt__box">
+              <h2 class="m_cta-txt">Contact</h2>
+            </div>
+          </a>
+        </div>
+      </section>
+
+      <!-- access/info -->
+      <section class="l_contents m_section-bg">
+        
+        <div class="m_map-wrapper">
+          <h2 class="m_section-ttl">Access / Info</h2>
+          <div class="m_map__sp">
+            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d405.1607717049037!2d139.71369944200922!3d35.66995494050561!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60188c98d6802ff5%3A0x407195664c18030!2z44CSMTUwLTAwMDEg5p2x5Lqs6YO95riL6LC35Yy656We5a6u5YmN77yT5LiB55uu77yR4oiS77yS77yVIOOCs-ODvOODneWkluiLkeOCteOCpOODiQ!5e0!3m2!1sja!2sjp!4v1787899987422!5m2!1sja!2sjp" width="100%" height="180" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+          </div>
+          <div class="m_map__pc">
+            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d405.1607717049037!2d139.71369944200922!3d35.66995494050561!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60188c98d6802ff5%3A0x407195664c18030!2z44CSMTUwLTAwMDEg5p2x5Lqs6YO95riL6LC35Yy656We5a6u5YmN77yT5LiB55uu77yR4oiS77yS77yVIOOCs-ODvOODneWkluiLkeOCteOCpOODiQ!5e0!3m2!1sja!2sjp!4v1787899987422!5m2!1sja!2sjp" width="100%" height="280" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+          </div>
+        </div>
+      </section>
+
+    <!-- footerを表示させるためのコード -->
+    <div id="footer-component"></div>
+  </body>
+</html>
