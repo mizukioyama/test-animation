@@ -202,6 +202,8 @@
   border: 0;
   background-color: transparent;
   cursor: pointer;
+  position: relative;
+  z-index: 1000;
 }
 
 .hamburger__inner {
@@ -524,11 +526,11 @@ pc-block end
 }
 
 /* ========================================
-  Tablet
-  768px - 1023px
+  Header Intermediate
+  376px - 1023px
 ======================================== */
 
-@media screen and (min-width: 376px) and (max-width: 1335px) {
+@media screen and (min-width: 376px) and (max-width: 1023px) {
   .header__nav {
     display: none;
   }
@@ -562,6 +564,245 @@ pc-block end
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
+    transform: translateY(0);
+    background: var(--bg-txt02);
+    width: 100%;
+    min-height: 100vh;
+    height: 100dvh;
+  }
+
+  .drawer__nav {
+    width: 100%;
+  }
+
+  .drawer__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+  }
+
+  .drawer__item,
+  .drawer .nav__item {
+    text-align: center;
+  }
+
+  .drawer__link {
+    color: inherit;
+    font-size: 16px;
+    line-height: 1.8;
+    text-decoration: none;
+  }
+}
+
+/* ========================================
+  Footer Intermediate - Mobile like
+  376px - 767px
+======================================== */
+
+@media screen and (min-width: 376px) and (max-width: 767px) {
+  .footer,
+  .footer__inner,
+  .footer__main,
+  .footer__nav {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .footer {
+    padding: 64px 24px;
+  }
+
+  .footer__main {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 64px;
+  }
+
+  .footer__nav {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+  }
+
+  .footer__logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .footer-nav__list {
+    width: min(100%, 560px);
+    flex-direction: column;
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    flex-shrink: 1;
+  }
+
+  .footer-nav__list.sp {
+    width: auto;
+    border: 0;
+    padding: 0;
+    gap: 16px;
+    display: flex;
+    align-items: center;
+  }
+
+  .f_nav__item {
+    width: 100%;
+    grid-template-columns: 96px minmax(0, 1fr);
+  }
+
+  .f-list {
+    width: 96px;
+  }
+
+  .footer .reservation {
+    width: 200px;
+    max-width: 100%;
+  }
+
+  .footer .pc {
+    display: none;
+  }
+
+  .footer .sp {
+    display: block;
+  }
+
+  .footer .f_nav__item.sp {
+    display: grid;
+  }
+}
+
+/* ========================================
+  Footer Intermediate - Tablet
+  768px - 1079px
+======================================== */
+
+@media screen and (min-width: 768px) and (max-width: 1079px) {
+  .footer,
+  .footer__inner,
+  .footer__main,
+  .footer__nav {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .footer {
+    padding: 64px 32px;
+  }
+
+  .footer__main {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 48px;
+  }
+
+  .footer__nav {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    justify-content: center;
+    gap: clamp(32px, 6vw, 72px);
+  }
+
+  .footer-nav__list {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    flex-shrink: 1;
+  }
+
+  .pc-block {
+    min-width: 0;
+  }
+
+  .pc-block .footer-nav__list:last-child {
+    margin-top: 48px;
+  }
+
+  .footer .pc {
+    display: block;
+  }
+
+  .footer .sp {
+    display: none;
+  }
+}
+
+/* ========================================
+  Large Smartphone
+  481px - 767px
+======================================== */
+
+@media (max-width: 767px) {
+  :root {
+    --side-space: clamp(16px, 4vw, 24px);
+  }
+}
+
+/* ========================================
+  Smartphone
+  376px - 480px
+======================================== */
+
+@media (max-width: 480px) {
+  :root {
+    --side-space: 16px;
+  }
+
+  .header__hamburger {
+    width: 32px;
+    height: 28px;
+  }
+}
+
+/* ========================================
+  Body Lock
+======================================== */
+
+body.is-lock {
+  overflow: hidden;
+}
+
+/* ========================================
+  Reduced Motion
+======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .nav__link::after,
+  .hamburger__line,
+  .drawer {
+    transition: none;
+  }
+}
+
+.pc {
+  display: block;
+}
+.sp {
+  display: none;
+}
+
+@media (max-width: 375px) {
+  .pc {
+    display: none;
+  }
+  .sp {
+    display: block;
+  }
+  .f_nav__item.sp {
+    display: flex;
+  }
+};
     transform: translateY(0);
     background: var(--bg-txt02);
     width: 100%;
